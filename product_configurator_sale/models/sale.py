@@ -54,25 +54,16 @@ class SaleOrderLine(models.Model):
             model_name=wizard_model, extra_vals=extra_vals
         )
 
-    @api.depends(
-        "config_session_id",
-        "tax_id",
-        "company_id",
-    )
+    def _get_display_price(self):
+        self.ensure_one()
+        if self.config_session_id:
+            return self.config_session_id.price
+        else:
+            return super(SaleOrderLine, self)._get_display_price()
+
+    @api.depends("config_session_id")
     def _compute_price_unit(self):
-        result = None
-        for line in self:
-            if line.config_session_id:
-                account_tax_obj = self.env["account.tax"]
-                line.price_unit = account_tax_obj._fix_tax_included_price_company(
-                    line.config_session_id.price,
-                    line.product_id.taxes_id,
-                    line.tax_id,
-                    line.company_id,
-                )
-            else:
-                result = super(SaleOrderLine, line)._compute_price_unit()
-        return result
+        super(SaleOrderLine, self)._compute_price_unit()
 
     def _get_sale_order_line_multiline_description_variants(self):
         name = ""

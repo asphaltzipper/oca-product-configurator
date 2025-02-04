@@ -7,5 +7,6 @@ class View(models.Model):
     def _validate_tag_button(self, node, name_manager, node_info):
         special = node.get("special")
         if special and special == "no_save":
+            # FIXME: nice idea, but then action_reset method is not executed
             return
         return super()._validate_tag_button(node, name_manager, node_info)

@@ -228,11 +228,16 @@ class ProductConfigLine(models.Model):
         for line in self:
             forbidden_values = line.value_ids - line.attr_line_val_ids
             if forbidden_values:
+                forbidden_details = ", ".join([x.name for x in forbidden_values])
+                allowed_details = ", ".join([x.name for x in line.attr_line_val_ids])
                 raise ValidationError(
                     _(
                         "Values must belong to the attribute of the "
                         "corresponding attribute_line set on the "
-                        "configuration line"
+                        "configuration line (%s: %s not in %s)",
+                        line.attribute_line_id.attribute_id.name,
+                        forbidden_details,
+                        allowed_details
                     )
                 )
 

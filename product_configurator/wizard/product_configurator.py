@@ -158,6 +158,7 @@ class ProductConfigurator(models.TransientModel):
         custom_val = config_session_id.get_custom_value_id()
         domains = {}
         check_avail_ids = cfg_val_ids[:]
+
         for line in product_tmpl_id.attribute_line_ids.sorted():
             field_name = field_prefix + str(line.attribute_id.id)
 
@@ -641,6 +642,7 @@ class ProductConfigurator(models.TransientModel):
                 # required will not work with stepchange using statusbar.
                 # if config_steps and wiz.state not in cfg_step_ids:
                 #     continue
+                # FIXME: ignores the OR operator between domain lines
                 if attr_field not in attr_depends:
                     attr_depends[attr_field] = set()
                 if domain_line.condition == "in":
@@ -655,8 +657,9 @@ class ProductConfigurator(models.TransientModel):
             for dependee_field, val_ids in attr_depends.items():
                 if not val_ids:
                     continue
-                if not attr_line.custom:
-                    attrs["readonly"].append((dependee_field, "not in", list(val_ids)))
+                # temporary fix for bug that sets field readonly when it should not be
+                # if not attr_line.custom:
+                #     attrs["readonly"].append((dependee_field, "not in", list(val_ids)))
 
                 if attr_line.required and not attr_line.custom:
                     attrs["required"].append((dependee_field, "in", list(val_ids)))
@@ -956,11 +959,11 @@ class ProductConfigurator(models.TransientModel):
             session.unlink()
         except Exception:
             session = self.env["product.config.step"]
-
         action = self.with_context(
             wizard_id=None,
             allow_preset_selection=False,
             default_product_tmpl_id=session_product_tmpl_id.id,
+            wizard_id_view_ref=None,
         ).get_wizard_action()
         return action
 
