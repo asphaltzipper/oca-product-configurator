@@ -1187,9 +1187,29 @@ class ProductConfigSession(models.Model):
             value_ids = self.value_ids.ids
 
         # process domains as shown in this wikipedia pseudocode:
-        # https://en.wikipedia.org/wiki/Polish_notation#Order_of_operations
+        # https://en.wikipedia.org/w/index.php?title=Polish_notation&oldid=740498596
+        # Scan the given prefix expression from right to left
+        # for each symbol
+        #  {
+        #   if operand then
+        #     push onto stack
+        #   if operator then
+        #    {
+        #     operand1=pop stack
+        #     operand2=pop stack
+        #     compute operand1 operator operand2
+        #     push result onto stack
+        #    }
+        #  }
+        # return top of stack as result
         stack = []
         for domain in reversed(domains):
+            if len(stack)==2 and isinstance(domain, tuple):
+                # this domain is an operand, and we already have 2 operands in the
+                # stack, so apply the implied 'and' operator
+                operand1 = stack.pop()
+                operand2 = stack.pop()
+                stack.append(operand1 and operand2)
             if isinstance(domain, tuple):
                 # evaluate operand and push to stack
                 if domain[1] == "in":
@@ -1204,7 +1224,7 @@ class ProductConfigSession(models.Model):
             else:
                 # evaluate operator and previous 2 operands
                 # compute_domain() only inserts 'or' operators
-                # compute_domain() enforces 2 operands per operator
+                # compute_domain() ensures 2 operands precede an operator
                 operand1 = stack.pop()
                 operand2 = stack.pop()
                 stack.append(operand1 or operand2)
